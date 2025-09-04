@@ -1,6 +1,7 @@
- NameForge – AI-Powered Domain Name Generator
-
 # NameForge – AI-Powered Domain Name Generator
+<a href="https://creativecommons.org/licenses/by-nc-nd/4.0/">
+  <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-nd.png" width="58"/>
+</a>
 
 NameForge is a project that leverages Large Language Models (LLMs) to generate creative, relevant, and safe domain name suggestions from business descriptions. The project emphasizes **dataset creation, model fine-tuning, evaluation, edge case discovery, and iterative improvement**.
 
