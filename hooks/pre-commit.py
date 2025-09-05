@@ -54,13 +54,13 @@ if not staged_files:
     sys.exit(0)
 
 # -----------------------------
-# Auto-fix staged files
+# Auto-fix staged files (PEP8 line length 79)
 # -----------------------------
 print("Running Black...")
-run(["pipenv", "run", "black"] + staged_files)
+run(["pipenv", "run", "black", "--line-length", "79"] + staged_files)
 
 print("Running isort...")
-run(["pipenv", "run", "isort"] + staged_files)
+run(["pipenv", "run", "isort", "--line-length", "79"] + staged_files)
 
 print("Running autoflake...")
 run([
