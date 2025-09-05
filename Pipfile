@@ -12,6 +12,11 @@ fastapi = "*"
 uvicorn = "*"
 
 [dev-packages]
+pre-commit = "*"
+black = {extras = ["jupyter"], version = "*"}
+isort = "*"
+autoflake = "*"
+flake8 = "*"
 
 [requires]
 python_version = "3.11"

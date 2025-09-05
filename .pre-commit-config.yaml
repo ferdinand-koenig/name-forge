@@ -1,0 +1,8 @@
+repos:
+- repo: local
+  hooks:
+    - id: wizard-pre-commit
+      name: Wizard Pre-commit Hook
+      entry: hooks/pre-commit.py
+      language: system
+      stages: [pre-commit]
