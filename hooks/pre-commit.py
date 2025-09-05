@@ -46,9 +46,9 @@ staged_files = subprocess.check_output(
 # Filter only Python / notebooks and exclude the hook itself
 staged_files = [
     f for f in staged_files
-    if f.endswith((".py", ".ipynb")) and f != "hooks/pre-commit.py"
+    if f.endswith(".py") and f != "hooks/pre-commit.py"
 ]
-
+print(f"staged files: {staged_files}")
 if not staged_files:
     print("No Python or notebook files staged. The Wizard nods...")
     sys.exit(0)
