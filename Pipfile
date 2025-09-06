@@ -4,12 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-torch = "*"
-transformers = "*"
 datasets = "*"
 jupyter = "*"
 fastapi = "*"
 uvicorn = "*"
+transformers = "*"
+torch = "*"
+peft = "*"
+rich = "*"
 
 [dev-packages]
 pre-commit = "*"
