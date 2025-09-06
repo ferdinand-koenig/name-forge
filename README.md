@@ -116,3 +116,26 @@ NameForge/
 
 *   All experiments are reproducible via Pipenv.
 *   Model checkpoints, datasets, and evaluation results are versioned in the repo.
+
+
+---
+
+## notes
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install pipenv
+pipenv install
+python src/fine_tune.py
+```
+
+Convert to gguf:
+```bash
+python convert_to_gguf.py
+python3 convert.py --outfile llama3_8b_domain.gguf ./llama3_8b_merged
+./quantize llama3_8b_domain.gguf llama3_8b_domain.Q4_K_M.gguf Q4_K_M
+
+```
+![img.png](img/wizard.png)
