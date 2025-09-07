@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """
-LoRA fine-tuning for LLaMA-3.1-8B (4-bit) using PEFT + Hugging Face Trainer.
+LoRA fine-tuning for Mistral-7B-Instruct-v0.3 (4-bit) using PEFT + Hugging Face Trainer.
 - Uses YAML prompt template
 - Reads CSV (business_description, domain_names)
 - Logs training/eval loss
 - Supports early stopping
 - Rich progress bar
+- Automatically detects attention projection layers for LoRA
 """
 import ast
 import json
@@ -16,20 +17,20 @@ import torch
 import yaml
 from datasets import Dataset
 from peft import LoraConfig, get_peft_model
-from rich.progress import track
+from rich.progress import Progress, track
 from transformers import (AutoModelForCausalLM, AutoTokenizer,
                           BitsAndBytesConfig, DataCollatorForLanguageModeling,
                           EarlyStoppingCallback, Trainer, TrainingArguments)
 
 # -----------------------------
-# 0. Configuration (edit these)
+# 0. Configuration
 # -----------------------------
-CSV_PATH = "domains.csv"
+CSV_PATH = "data/raw/train_dataset.csv"
 PROMPT_YAML_PATH = "prompts/prompt-1.yaml"
 OUTPUT_DIR = "./lora-mistral-domain"
 MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
 MAX_LENGTH = 512
-TRAIN_BATCH_SIZE = 4
+TRAIN_BATCH_SIZE = 8
 GRAD_ACCUM_STEPS = 4
 NUM_EPOCHS = 3
 LEARNING_RATE = 2e-4
@@ -40,14 +41,14 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 torch.manual_seed(SEED)
 
 # -----------------------------
-# 1. load prompt
+# 1. Load prompt
 # -----------------------------
 with open(PROMPT_YAML_PATH, "r", encoding="utf-8") as f:
     prompt_yaml = yaml.safe_load(f)
 PROMPT_TEMPLATE = prompt_yaml["domain_prompt"]
 
 # -----------------------------
-# 2. load tokenizer
+# 2. Load tokenizer
 # -----------------------------
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
 if tokenizer.pad_token is None:
@@ -55,7 +56,7 @@ if tokenizer.pad_token is None:
 
 
 # -----------------------------
-# 3. load CSV -> Dataset
+# 3. Load CSV -> Dataset
 # -----------------------------
 def csv_to_dataset(csv_path, prompt_template):
     df = pd.read_csv(csv_path)
@@ -68,7 +69,7 @@ def csv_to_dataset(csv_path, prompt_template):
         except (ValueError, SyntaxError):
             domains = row["domain_names"]
         prompt = prompt_template.format(description=description)
-        completion = json.dumps(domains)
+        completion = json.dumps(domains)  # During v1.0 this was str()
         text = prompt + "\n" + completion + tokenizer.eos_token
         rows.append({"prompt": prompt, "completion": completion, "text": text})
     return Dataset.from_list(rows)
@@ -81,7 +82,7 @@ eval_ds = dataset["test"]
 
 
 # -----------------------------
-# 4. tokenization
+# 4. Tokenization
 # -----------------------------
 def tokenize_fn(examples):
     tokenized = tokenizer(
@@ -94,15 +95,31 @@ def tokenize_fn(examples):
     return tokenized
 
 
-train_tokenized = train_ds.map(
-    tokenize_fn, batched=True, remove_columns=train_ds.column_names
-)
-eval_tokenized = eval_ds.map(
-    tokenize_fn, batched=True, remove_columns=eval_ds.column_names
-)
+with Progress() as progress:
+    t1 = progress.add_task(
+        "[green]Tokenizing train dataset...", total=len(train_ds)
+    )
+    train_tokenized = train_ds.map(
+        lambda x: tokenize_fn(x),
+        batched=True,
+        remove_columns=train_ds.column_names,
+        desc="Tokenizing train dataset",
+    )
+    progress.update(t1, advance=len(train_ds))
+
+    t2 = progress.add_task(
+        "[blue]Tokenizing eval dataset...", total=len(eval_ds)
+    )
+    eval_tokenized = eval_ds.map(
+        lambda x: tokenize_fn(x),
+        batched=True,
+        remove_columns=eval_ds.column_names,
+        desc="Tokenizing eval dataset",
+    )
+    progress.update(t2, advance=len(eval_ds))
 
 # -----------------------------
-# 5. load 4-bit model
+# 5. Load 4-bit model
 # -----------------------------
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -118,23 +135,39 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.float16,
     trust_remote_code=True,
 )
+model.config.use_cache = False
 
 # -----------------------------
-# 6. apply LoRA
+# 6. Detect LoRA target modules
 # -----------------------------
+target_modules = [
+    name
+    for name, module in model.named_modules()
+    if isinstance(module, torch.nn.Linear)
+    and ("q_proj" in name or "v_proj" in name)
+]
+print(f"Detected {len(target_modules)} LoRA target modules:")
+for m in target_modules:
+    print("  -", m)
+
 lora_config = LoraConfig(
     r=16,
     lora_alpha=32,
-    target_modules=["q_proj", "v_proj"],
+    target_modules=target_modules,
     lora_dropout=0.05,
     bias="none",
     task_type="CAUSAL_LM",
 )
 model = get_peft_model(model, lora_config)
+# Important for 4-bit + gradient checkpointing:
+# Enables gradients to flow from the input embeddings to the LoRA layers.
+# Without this, PyTorch cannot compute gradients for LoRA adapters,
+# and you’ll get the error: "element 0 of tensors does not require grad".
+model.enable_input_require_grads()
 model.print_trainable_parameters()
 
 # -----------------------------
-# 7. data collator & Trainer
+# 7. Data collator & Trainer
 # -----------------------------
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
@@ -144,6 +177,9 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=GRAD_ACCUM_STEPS,
     num_train_epochs=NUM_EPOCHS,
     learning_rate=LEARNING_RATE,
+    # The two arguments from below weren't used in v1.0
+    dataloader_num_workers=16,  # number of CPU processes for loading batches
+    dataloader_pin_memory=True,  # pins memory for faster CPU→GPU transfer
     fp16=True,
     logging_steps=50,
     save_strategy="steps",
@@ -166,16 +202,19 @@ trainer = Trainer(
     tokenizer=tokenizer,
     data_collator=data_collator,
     callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+    optimizers=(None, None),  # use default AdamW for trainable params only,
 )
 
 # -----------------------------
-# 8. train
+# 8. Train
 # -----------------------------
 trainer.train()
-model.save_pretrained(os.path.join(OUTPUT_DIR, "lora_adapter"))
-tokenizer.save_pretrained(os.path.join(OUTPUT_DIR, "lora_adapter"))
 
-print(
-    f"✅ Training finished. LoRA adapter saved to "
-    f"{os.path.join(OUTPUT_DIR, 'lora_adapter')}"
-)
+# -----------------------------
+# 9. Save LoRA adapter
+# -----------------------------
+adapter_dir = os.path.join(OUTPUT_DIR, "lora_adapter")
+model.save_pretrained(adapter_dir)
+tokenizer.save_pretrained(adapter_dir)
+
+print(f"✅ Training finished. LoRA adapter saved to {adapter_dir}")
