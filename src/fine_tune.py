@@ -30,10 +30,10 @@ PROMPT_YAML_PATH = "prompts/prompt-1.yaml"
 OUTPUT_DIR = "./lora-mistral-domain"
 MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.3"
 MAX_LENGTH = 512
-TRAIN_BATCH_SIZE = 8
-GRAD_ACCUM_STEPS = 4
-NUM_EPOCHS = 3
-LEARNING_RATE = 2e-4
+TRAIN_BATCH_SIZE = 32
+GRAD_ACCUM_STEPS = 1
+NUM_EPOCHS = 4
+LEARNING_RATE = 1.7e-4
 EVAL_RATIO = 0.1
 SEED = 42
 
@@ -178,7 +178,7 @@ training_args = TrainingArguments(
     num_train_epochs=NUM_EPOCHS,
     learning_rate=LEARNING_RATE,
     # The two arguments from below weren't used in v1.0
-    dataloader_num_workers=16,  # number of CPU processes for loading batches
+    dataloader_num_workers=64,  # number of CPU processes for loading batches
     dataloader_pin_memory=True,  # pins memory for faster CPU→GPU transfer
     fp16=True,
     logging_steps=50,
@@ -187,7 +187,9 @@ training_args = TrainingArguments(
     eval_strategy="steps",
     eval_steps=500,
     save_total_limit=3,
-    gradient_checkpointing=True,
+    # changed next attrib in v2.1 from True to False
+    # (Roughly 35GB instead of 4GB VRAM but 6.5s instead of 9s p.i.)
+    gradient_checkpointing=False,
     load_best_model_at_end=True,
     metric_for_best_model="eval_loss",
     greater_is_better=False,
