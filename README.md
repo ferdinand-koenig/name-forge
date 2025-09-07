@@ -133,9 +133,21 @@ python src/fine_tune.py
 
 Convert to gguf:
 ```bash
-python convert_to_gguf.py
-python3 convert.py --outfile llama3_8b_domain.gguf ./llama3_8b_merged
+python src/convert_to_gguf.py
+
+git clone https://github.com/ggml-org/llama.cpp.git
+python3 llama.cpp/convert_hf_convert_to_gguf.py --outfile llama3_8b_domain.gguf ./llama3_8b_merged
 ./quantize llama3_8b_domain.gguf llama3_8b_domain.Q4_K_M.gguf Q4_K_M
 
 ```
 ![img.png](img/wizard.png)
+
+Quantized with quantizer from source
+```bash
+# in llama.cpp repository
+wget https://github.com/ggml-org/llama.cpp/releases/download/b6401/llama-b6401-bin-ubuntu-x64.zip
+unzip llama-b6401-bin-ubuntu-x64.zip
+cd ..
+# back again in NameForge (project root)
+llama.cpp/release/build/bin/llama-quantize ./mistral_7B_lora.gguf ./mistral_7B_lora-q4_k_m.gguf Q4_K_M
+```
