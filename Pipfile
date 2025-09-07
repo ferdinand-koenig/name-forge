@@ -12,6 +12,11 @@ transformers = "*"
 torch = "*"
 peft = "*"
 rich = "*"
+sentencepiece = "*"
+protobuf = "*"
+bitsandbytes = "*"
+tensorboard = "*"
+mistral-common = ">=1.8.3"
 
 [dev-packages]
 pre-commit = "*"
