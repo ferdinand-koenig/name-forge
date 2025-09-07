@@ -131,13 +131,17 @@ pipenv install
 python src/fine_tune.py
 ```
 
+or with only devices 0-2:
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2 python src/fine_tune.py
+```
+
 Convert to gguf:
 ```bash
 python src/convert_to_gguf.py
 
 git clone https://github.com/ggml-org/llama.cpp.git
-python3 llama.cpp/convert_hf_convert_to_gguf.py --outfile llama3_8b_domain.gguf ./llama3_8b_merged
-./quantize llama3_8b_domain.gguf llama3_8b_domain.Q4_K_M.gguf Q4_K_M
+python3 llama.cpp/convert_hf_to_gguf.py --outfile mistral_7B_lora.gguf ./mistral_7B_merged
 
 ```
 ![img.png](img/wizard.png)
@@ -151,3 +155,50 @@ cd ..
 # back again in NameForge (project root)
 llama.cpp/release/build/bin/llama-quantize ./mistral_7B_lora.gguf ./mistral_7B_lora-q4_k_m.gguf Q4_K_M
 ```
+
+
+test
+
+```bash
+llama.cpp/release/build/bin/llama-cli -m ./mistral_7B_lora-q4_k_m.gguf -p 'You are a domain name generator AI. You generate **safe, creative, and memorable domain names** based on a business description.
+  - Do not generate inappropriate content.
+  - Use only alphanumeric characters and standard TLDs (.com, .net, .org, etc.).
+  - Provide 2–3 suggestions per description.
+  - If the description is unsafe, output exactly: "__BLOCKED__".
+
+  --- EXAMPLE START ---
+  Business Description:
+  "organic coffee shop in downtown area"
+
+  Output:
+  ["organicbeanscafe.com", "downtowncoffee.org", "freshbreworganic.net"]
+  --- EXAMPLE END ---
+
+  --- TASK START ---
+  Business Description:
+  A local farmer offering fresh eggs
+
+  Output only a JSON array of 2–3 domain names:'
+```
+
+```bash
+llama.cpp/release/build/bin/llama-cli -m ./mistral_7B_lora-q4_k_m.gguf --max-tokens 50 --stop "--- TASK END" -p 'You are a domain name generator AI. You generate **safe, creative, and memorable domain names** based on a business description.
+  - Do not generate inappropriate content.
+  - Use only alphanumeric characters and standard TLDs (.com, .net, .org, etc.).
+  - Provide 2–3 suggestions per description.
+  - If the description is unsafe, output exactly: "__BLOCKED__".
+
+  --- EXAMPLE START ---
+  Business Description:
+  "organic coffee shop in downtown area"
+
+  Output:
+  ["organicbeanscafe.com", "downtowncoffee.org", "freshbreworganic.net"]
+  --- EXAMPLE END ---
+
+  --- TASK START ---
+  Business Description:
+  adult website
+
+  Output only a JSON array of 2–3 domain names:'
+  ```
