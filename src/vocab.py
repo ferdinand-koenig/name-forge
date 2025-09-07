@@ -1,18 +1,131 @@
+# src/vocab.py
+
 # ------------------------------
-# Business types
+# Business types keywords for relevant domain generation
 # ------------------------------
-business_types = [
-    "cafe",
-    "restaurant",
-    "tech startup",
-    "online store",
-    "clothing boutique",
-    "law firm",
-    "educational platform",
-    "fitness studio",
-    "travel agency",
-    "bookstore",
-]
+business_type_keywords = {
+    "bookstore": [
+        "books",
+        "library",
+        "store",
+        "reads",
+        "vault",
+        "corner",
+        "shelf",
+    ],
+    "online store": [
+        "shop",
+        "store",
+        "market",
+        "corner",
+        "emporium",
+        "bazaar",
+    ],
+    "clothing boutique": [
+        "fashion",
+        "style",
+        "boutique",
+        "threads",
+        "wardrobe",
+        "apparel",
+    ],
+    "fitness studio": ["fit", "gym", "studio", "hub", "training", "wellness"],
+    "travel agency": [
+        "travel",
+        "tours",
+        "trips",
+        "journey",
+        "voyage",
+        "expedition",
+    ],
+    "restaurant": [
+        "dine",
+        "eatery",
+        "kitchen",
+        "bistro",
+        "grill",
+        "table",
+        "cafe",
+    ],
+    "tech startup": [
+        "tech",
+        "lab",
+        "hub",
+        "works",
+        "innovate",
+        "solutions",
+        "platform",
+    ],
+    "law firm": ["law", "legal", "firm", "counsel", "advocate", "partners"],
+    "medical clinic": [
+        "health",
+        "clinic",
+        "care",
+        "wellness",
+        "med",
+        "center",
+    ],
+    "coffee shop": ["coffee", "brew", "cafe", "roasters", "beans", "corner"],
+    "art gallery": ["gallery", "art", "studio", "exhibit", "canvas", "works"],
+    "cosmetics brand": [
+        "beauty",
+        "cosmetics",
+        "glow",
+        "vanity",
+        "studio",
+        "essence",
+    ],
+    "music school": [
+        "music",
+        "academy",
+        "studio",
+        "notes",
+        "melody",
+        "harmony",
+    ],
+    "software company": [
+        "soft",
+        "solutions",
+        "tech",
+        "labs",
+        "platform",
+        "systems",
+    ],
+    "consulting firm": [
+        "consult",
+        "advisory",
+        "partners",
+        "solutions",
+        "group",
+        "hub",
+    ],
+    "pet store": ["pets", "paw", "store", "petcare", "corner", "buddy"],
+    "bakery": ["bake", "bakery", "oven", "bread", "sweet", "corner"],
+    "toy store": ["toys", "play", "corner", "fun", "games", "hub"],
+    "garden center": [
+        "garden",
+        "plants",
+        "nursery",
+        "green",
+        "flora",
+        "corner",
+    ],
+    "fitness apparel": [
+        "fit",
+        "active",
+        "gear",
+        "threads",
+        "style",
+        "performance",
+    ],
+    "cafe": ["coffee", "brew", "cafe", "corner", "beans"],
+    "educational platform": ["learn", "academy", "platform", "study", "hub"],
+}
+
+# ------------------------------
+# Business types list
+# ------------------------------
+business_types = list(business_type_keywords.keys())
 
 # ------------------------------
 # Generic business types (formerly used only in unsafe generator)

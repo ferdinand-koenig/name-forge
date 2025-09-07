@@ -3,10 +3,10 @@ import csv
 import os
 import random
 
-from src.vocab import (adjectives, business_types, edge_descriptions,
-                       generic_business_types, locations, nouns, purposes,
-                       rare_adjectives, rare_nouns, suffixes, tlds,
-                       unsafe_categories)
+from src.vocab import (adjectives, business_type_keywords, business_types,
+                       edge_descriptions, generic_business_types, locations,
+                       nouns, purposes, rare_adjectives, rare_nouns, suffixes,
+                       tlds, unsafe_categories)
 
 # ------------------------------
 # Grammar templates for domain generation
@@ -18,6 +18,8 @@ domain_grammar = [
     ["{adj}", "{noun}", "{suffix}"],
     ["{adj}", "{business_type}", "{suffix}"],
 ]
+
+connectors = ["", "-", "hub", "corner", "works"]
 
 
 # ------------------------------
@@ -34,35 +36,49 @@ def generate_domain_from_template(template_words):
     return domain_base + domain_suffix + tld
 
 
-def generate_domain_from_description(description, n_domains=3):
+# ------------------------------
+# Domain generator
+# ------------------------------
+def generate_domain_from_description(
+    description, business_type=None, n_domains=3
+):
+    """
+    Generate 2–3 relevant domain names using business_type_keywords.
+    """
     words = description.lower().split()
-    adj_candidates = [
-        w for w in words if w in adjectives + rare_adjectives
-    ] or [random.choice(adjectives + rare_adjectives)]
-    noun_candidates = [w for w in words if w in nouns + rare_nouns] or [
-        random.choice(nouns + rare_nouns)
-    ]
-    bt_candidates = [
-        w for w in words if w in business_types + generic_business_types
-    ] or [random.choice(business_types + generic_business_types)]
-
     domains = set()
     attempts = 0
-    while len(domains) < n_domains and attempts < 20:
-        template = random.choice(domain_grammar)
-        filled = []
-        for token in template:
-            if token == "{adj}":
-                filled.append(random.choice(adj_candidates))
-            elif token == "{noun}":
-                filled.append(random.choice(noun_candidates))
-            elif token == "{business_type}":
-                filled.append(random.choice(bt_candidates))
-            elif token == "{suffix}":
-                filled.append(random.choice(suffixes))
-        domain = generate_domain_from_template(filled)
-        domains.add(domain)
+
+    # Determine business type if not given
+    if not business_type or business_type not in business_type_keywords:
+        for bt in business_type_keywords:
+            if bt in description.lower():
+                business_type = bt
+                break
+    if not business_type or business_type not in business_type_keywords:
+        business_type = random.choice(list(business_type_keywords.keys()))
+
+    bt_keywords = business_type_keywords[business_type]
+
+    while len(domains) < n_domains and attempts < 50:
+        # Pick 1 word from description + 1 from business type keywords
+        main_word = random.choice(
+            [w for w in words if w.isalpha()] + [random.choice(bt_keywords)]
+        )
+        secondary_word = random.choice(bt_keywords)
+        connector = random.choice(connectors) if random.random() < 0.5 else ""
+
+        # Build domain
+        domain_base = (
+            clean_word(main_word) + connector + clean_word(secondary_word)
+        )
+        if len(domain_base) > 25:
+            domain_base = domain_base[:25]
+
+        tld = random.choice(tlds)
+        domains.add(domain_base + tld)
         attempts += 1
+
     return list(domains)
 
 
@@ -84,7 +100,7 @@ def generate_business_description(
     complexity="simple", unsafe=False, edgy_fraction=0.2
 ):
     """
-    Generate a business description and domains.
+    Generate a business description, business type, and domains.
     - complexity: simple / medium / complex
     - unsafe: True → blocked output
     - edgy_fraction: fraction of safe examples using rare adjectives/nouns
@@ -104,7 +120,6 @@ def generate_business_description(
     adj_pool = adjectives + rare_adjectives
     noun_pool = nouns + rare_nouns
 
-    # Optionally use rare adjectives/nouns for variety
     if random.random() < edgy_fraction:
         adj = random.choice(rare_adjectives)
         noun = random.choice(rare_nouns)
@@ -112,10 +127,12 @@ def generate_business_description(
         adj = random.choice(adj_pool)
         noun = random.choice(noun_pool)
 
+    # Pick business type from merged list
     bt = random.choice(business_types)
     location = random.choice(locations)
     purpose = random.choice(purposes)
 
+    # Build description based on complexity
     if complexity == "simple":
         desc = f"{adj} {bt}"
     elif complexity == "medium":
@@ -123,7 +140,8 @@ def generate_business_description(
     else:  # complex
         desc = f"{adj} {noun} {bt} in {location} {purpose}"
 
-    domains = generate_domain_from_description(desc)
+    # Generate domains using business type
+    domains = generate_domain_from_description(desc, business_type=bt)
     return desc, domains
 
 
