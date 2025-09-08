@@ -17,6 +17,7 @@ protobuf = "*"
 bitsandbytes = "*"
 tensorboard = "*"
 mistral-common = ">=1.8.3"
+langchain = "*"
 
 [dev-packages]
 pre-commit = "*"
