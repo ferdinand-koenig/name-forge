@@ -186,6 +186,9 @@ class LocalTransformersLLM(LLM):
         )
         self._model.to(self._device)
 
+    def __call__(self, prompt: str) -> str:
+        return self._call(prompt)
+
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         logger.debug(f'Prompt passed to tokenizer and model: "{prompt}"')
         if self.use_llamacpp:
