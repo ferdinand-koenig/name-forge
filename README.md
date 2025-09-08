@@ -128,17 +128,17 @@ source .venv/bin/activate
 pip install --upgrade pip
 pip install pipenv
 pipenv install
-python src/fine_tune.py
+python src/fine_tune/fine_tune.py
 ```
 
 or with only devices 0-2:
 ```bash
-CUDA_VISIBLE_DEVICES=0,1,2 python src/fine_tune.py
+CUDA_VISIBLE_DEVICES=0,1,2 python src/fine_tune/fine_tune.py
 ```
 
 Convert to gguf:
 ```bash
-python src/convert_to_gguf.py
+python src/fine_tune/convert_to_gguf.py
 
 git clone https://github.com/ggml-org/llama.cpp.git
 python3 llama.cpp/convert_hf_to_gguf.py --outfile mistral_7B_lora.gguf ./mistral_7B_merged
@@ -202,3 +202,13 @@ llama.cpp/release/build/bin/llama-cli -m ./mistral_7B_lora-q4_k_m.gguf --max-tok
 
   Output only a JSON array of 2–3 domain names:'
   ```
+
+
+
+LLM as a judge
+1. link all the libs
+```bash
+for f in ~/NameForge/llama.cpp/release/build/bin/*.so; do
+    ln -s "$f" .
+done
+```
