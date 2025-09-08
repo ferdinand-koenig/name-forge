@@ -3,10 +3,11 @@ import csv
 import os
 import random
 
-from src.vocab import (adjectives, business_type_keywords, business_types,
-                       edge_descriptions, generic_business_types, locations,
-                       nouns, purposes, rare_adjectives, rare_nouns, suffixes,
-                       tlds, unsafe_categories)
+from src.fine_tune.vocab import (adjectives, business_type_keywords,
+                                 business_types, edge_descriptions,
+                                 generic_business_types, locations, nouns,
+                                 purposes, rare_adjectives, rare_nouns,
+                                 suffixes, tlds, unsafe_categories)
 
 # ------------------------------
 # Grammar templates for domain generation
