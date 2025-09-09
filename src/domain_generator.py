@@ -49,6 +49,9 @@ def generate_domains(desc: str) -> List[str]:
         end = output.rfind("]") + 1
         domains = json.loads(output[start:end])
         if isinstance(domains, list):
+            # If any element is "__BLOCKED__", make all blocked
+            if "__BLOCKED__" in domains:
+                domains = ["__BLOCKED__"] * len(domains)
             return domains
         else:
             print("⚠️ Output is not a list. Raw output:", output)
