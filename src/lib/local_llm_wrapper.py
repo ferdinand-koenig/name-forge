@@ -52,8 +52,14 @@ logger.debug(f"Set GGUF_USE_MMAP to: {os.environ['GGUF_USE_MMAP']}")
 def _load_llama_backend():
     import ctypes
 
-    # Load libllama.so or libggml.so if needed
-    llama_lib = ctypes.CDLL("./libllama.so")
+    # Get the directory of this Python file
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+
+    # Construct full path to the shared library
+    lib_path = os.path.join(dir_path, "libllama.so")
+
+    # Load the library
+    llama_lib = ctypes.CDLL(lib_path)
 
     # Try to call ggml_backend_load_all (if present)
     try:
