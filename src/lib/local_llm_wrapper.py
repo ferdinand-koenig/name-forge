@@ -52,6 +52,30 @@ os.environ["GGUF_USE_MMAP"] = "1"
 logger.debug(f"Set GGUF_USE_MMAP to: {os.environ['GGUF_USE_MMAP']}")
 
 
+def _load_llama_backend():
+    import ctypes
+
+    # Load libllama.so or libggml.so if needed
+    llama_lib = ctypes.CDLL("./libllama.so")
+
+    # Try to call ggml_backend_load_all (if present)
+    try:
+        ret = llama_lib.ggml_backend_load_all()
+        logger.info(
+            f"Successfully called ggml_backend_load_all(), returned: {ret}"
+        )
+    except AttributeError as e:
+        logger.error("ggml_backend_load_all not found:", e)
+
+
+_load_llama_backend()
+# ruff: noqa
+# advice ruff to not mark the following import.
+# The manual loading of the backend needs to happen before the import
+
+# ruff: enable
+
+
 class LocalTransformersLLM(LLM):
     """LangChain-compatible wrapper for a local Hugging Face Transformers model.
     Also directly callable as a function (`llm("prompt")`).
