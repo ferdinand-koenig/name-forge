@@ -31,46 +31,94 @@ ENV POETRY_NO_INTERACTION=1 \
     CMAKE_ARGS="-DLLAMA_CUBLAS=off -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DLLAMA_NATIVE=ON -DLLAMA_BUILD_BACKEND=ON"
 
 
-WORKDIR /name-forge
+WORKDIR /insight-bridge
 
 # 4. Copy dependency files and dummy README for Poetry sanity
 COPY pyproject.toml ./
 COPY README.md .
+#COPY install.py .
 
-# 5. Install all dependencies, forcing llama-cpp-python to build from source
-# RUN poetry run pip install --no-binary llama-cpp-python llama-cpp-python && \
+# 5. Install dependencies (forces llama-cpp-python to build from source)
 RUN poetry install --no-root && \
     rm -rf $POETRY_CACHE_DIR
 
+#COPY config.yaml ./
+#RUN . .venv/bin/activate && python -c "import yaml; \
+#    from langchain_huggingface import HuggingFaceEmbeddings; \
+#    model=yaml.safe_load(open('config.yaml')).get('embedding_model_name', 'sentence-transformers/sci-base'); \
+#    HuggingFaceEmbeddings(model_name=model)"
 
-# Copy code, prompts, dataset, artifacts
-COPY data/test_dataset.csv ./data/
-COPY prompts/prompt-1.yaml ./prompts/
-COPY src ./src/
+
+########################################
+# Runtime Worker stage: minimal runtime with llama.cpp + Python
+########################################
+FROM ghcr.io/ggml-org/llama.cpp:light AS runtime
+
+ARG PYTHON_VERSION=3.10
+
+# 8. Install matching Python version
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python${PYTHON_VERSION} \
+        python${PYTHON_VERSION}-venv \
+        python${PYTHON_VERSION}-distutils \
+        python3-pip \
+        libopenblas-base
 
 # 9. Set up environment for virtualenv and add path for llama lib
-ENV VIRTUAL_ENV=/name-forge/.venv \
-    PATH="/name-forge/.venv/bin:$PATH" \
-    LD_LIBRARY_PATH=/name-forge/.venv/lib/python3.11/site-packages/llama_cpp:/app:${LD_LIBRARY_PATH:-}
+ENV VIRTUAL_ENV=/insight-bridge/.venv \
+    PATH="/insight-bridge/.venv/bin:$PATH" \
+    LD_LIBRARY_PATH=/insight-bridge/.venv/lib/python3.10/site-packages/llama_cpp:/app:${LD_LIBRARY_PATH:-}
+
+
+
+WORKDIR /insight-bridge
+
+# 10. Copy virtualenv from builder
+COPY --from=builder /insight-bridge/.venv /insight-bridge/.venv
+# Copy pre-downloaded Hugging Face cache
+#COPY --from=builder /root/.cache/huggingface /root/.cache/huggingface
+
+## 11. Copy project files (again — but clean, no dev tooling)
+#COPY app/__init__.py app/logger.py ./app/
+#COPY app/inference ./app/inference
+##COPY ingest ./ingest
+#COPY data/faiss_index ./data/
+#COPY data/faiss_metadata.pkl ./data/
+COPY README.md .
+#COPY config.yaml prompt_template.yaml ./
+
+# 10. Copy project files (clean set for runtime)
+COPY data/test_dataset.csv ./data/
+COPY prompts/prompt-1.yaml ./prompts/
+COPY src ./app/
+
+## Copy backend .so files into /insight-bridge
+#RUN cp /app/libllama.so /insight-bridge/ && \
+#    cp /app/libggml-*.so /insight-bridge/
 
 # Link libllama.so
-RUN ln -s /app/libllama.so /name-forge/libllama.so && \
+RUN ln -s /app/libllama.so /insight-bridge/libllama.so && \
     for file in /app/libggml-*.so; do \
-        ln -s "$file" /name-forge/"$(basename "$file")"; \
+        ln -s "$file" /insight-bridge/"$(basename "$file")"; \
     done
 
-RUN mkdir -p /name-forge/.venv/lib/python3.11/site-packages/llama_cpp/lib && \
-    ln -sf /app/libllama.so /name-forge/.venv/lib/python3.11/site-packages/llama_cpp/lib/libllama.so && \
-    for file in /app/libggml-*.so; do \
-        ln -sf "$file" /name-forge/.venv/lib/python3.11/site-packages/llama_cpp/lib/; \
-    done
 
-# Keep your ENTRYPOINT intact
+
+## 12. Expose FastAPI
+#EXPOSE 8000
+
+## Remove the current entrypoint which was set to /app/llama-cli by base image
+#ENTRYPOINT []
+## 13. Default command to run worker app
+#CMD ["python3", "-m", "app.generate_domains_from_csv"]
+
+
 ENTRYPOINT ["sh", "-c", "\
 for model in artifacts/*.gguf; do \
     model_name=$(basename \"$model\" .gguf); \
     echo \"Running domain generation for model: $model_name\"; \
-    poetry run python3 -m src.generate_domains_from_csv \
+    python3 -m app.generate_domains_from_csv \
         --input_csv ./data/test_dataset.csv \
         --output_csv ./outputs/${model_name}_domains.csv \
         --model_path \"$model\" \
