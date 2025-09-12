@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "nameforge"
+version = "0.1.0"
+description = "Python project for NameForge"
+authors = ["You <your@email.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.14"
+datasets = "*"
+jupyter = "*"
+fastapi = "*"
+uvicorn = "*"
+transformers = "*"
+torch = "*"
+peft = "*"
+rich = "*"
+sentencepiece = "*"
+protobuf = "*"
+bitsandbytes = "*"
+tensorboard = "*"
+mistral-common = ">=1.8.3"
+langchain = "*"
+pandas = "*"
+pyyaml = "*"
+llama-cpp-python = "==0.3.14"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "*"
+black = { extras = ["jupyter"], version = "*" }
+isort = "*"
+autoflake = "*"
+flake8 = "*"
