@@ -1,0 +1,43 @@
+# Ignore virtual environments
+.venv/
+env/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Logs and temp files
+*.log
+*.tmp
+*.out
+
+# Git files
+.git/
+.gitignore
+
+# Ignore all data files by default
+data/*
+
+
+
+# Ignore everything else by default
+*
+
+# Allow the specific test dataset needed in Docker build
+!data/test_dataset.csv
+# Explicitly allow files needed for the Docker build
+!Pipfile
+!Pipfile.lock
+!README.md
+!Dockerfile
+artifacts/
+!prompts/
+!src/lib/
+!src/generate_domains_from_csv.py
+!src/domain_generator.py
+!pyproject.toml
