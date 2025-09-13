@@ -5,6 +5,7 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
+import wordninja  # pip install wordninja
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -17,17 +18,20 @@ os.makedirs(output_folder, exist_ok=True)
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
+def tokenize_domain(domain):
+    """Split concatenated domains into words using wordninja"""
+    base = domain.split(".")[0]  # remove TLD
+    tokens = wordninja.split(base.lower())
+    return set(tokens)
+
+
 def lexical_overlap(desc, domain):
     """
     Compute lexical overlap between business description and domain.
-    Returns a fraction of overlapping words. Higher = more overlap.
+    Returns a fraction of overlapping words (Jaccard similarity)
     """
-    # tokenize description
     desc_tokens = set(re.findall(r"\w+", desc.lower()))
-    # strip domain of TLDs and non-letter chars
-    base = domain.split(".")[0]
-    domain_tokens = set(re.findall(r"\w+", base.lower()))
-    # Jaccard similarity
+    domain_tokens = tokenize_domain(domain)
     overlap = len(desc_tokens & domain_tokens) / max(
         1, len(desc_tokens | domain_tokens)
     )
