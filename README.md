@@ -212,3 +212,15 @@ for f in ~/NameForge/llama.cpp/release/build/bin/*.so; do
     ln -s "$f" .
 done
 ```
+
+
+
+
+Container for rouge and bleu
+```bash
+docker build -t nameforge .
+docker run -it --rm `
+  -v C:/Users/koenig/PycharmProjects/NameForge/artifacts:/name-forge/artifacts `
+  -v C:/Users/koenig/PycharmProjects/NameForge/outputs:/name-forge/outputs `
+  nameforge
+```
