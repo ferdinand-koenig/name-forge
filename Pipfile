@@ -21,7 +21,8 @@ langchain = "*"
 pandas = "*"
 pyyaml = "*"
 llama-cpp-python = ">=0.3.4,<0.4.0"
-
+scikit-learn = "*"
+sentence-transformers = "*"
 
 [dev-packages]
 pre-commit = "*"
