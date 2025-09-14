@@ -2,28 +2,32 @@
 name = "nameforge"
 version = "0.1.0"
 description = "Python project for NameForge"
-authors = ["You <your@email.com>"]
+authors = ["Ferdinand Koenig"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
-datasets = "*"
-jupyter = "*"
 fastapi = "*"
 uvicorn = "*"
-transformers = "*"
-torch = "*"
-peft = "*"
+llama-cpp-python = "==0.3.14"
+pandas = "*"
+pyyaml = "*"
 rich = "*"
 sentencepiece = "*"
 protobuf = "*"
-bitsandbytes = "*"
-tensorboard = "*"
 mistral-common = ">=1.8.3"
 langchain = "*"
-pandas = "*"
-pyyaml = "*"
-llama-cpp-python = "==0.3.14"
+#torch = "*"
+torch = {url = "https://download.pytorch.org/whl/cpu/torch-2.3.1%2Bcpu-cp310-cp310-linux_x86_64.whl"}
+transformers = "*"
+
+[tool.poetry.group.finetune.dependencies]
+datasets = "*"
+peft = "*"
+bitsandbytes = "*"
+tensorboard = "*"
+#torch = {url = "https://download.pytorch.org/whl/cu121/torch-2.3.1%2Bcu121-cp310-cp310-linux_x86_64.whl"}
+
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
@@ -31,3 +35,4 @@ black = { extras = ["jupyter"], version = "*" }
 isort = "*"
 autoflake = "*"
 flake8 = "*"
+jupyter = "*"
