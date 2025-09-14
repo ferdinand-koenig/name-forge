@@ -4,8 +4,8 @@ import argparse
 
 import pandas as pd
 
-from .domain_generator import DomainGenerator
-from .lib.local_llm_wrapper import LocalTransformersLLM
+from src.domain_generator import DomainGenerator
+from src.lib.local_llm_wrapper import LocalTransformersLLM
 
 
 def generate_domains_from_csv(
