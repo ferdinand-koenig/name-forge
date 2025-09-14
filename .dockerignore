@@ -34,10 +34,12 @@ data/*
 !Pipfile
 !Pipfile.lock
 !README.md
+!src/eval/Dockerfile
 !Dockerfile
 artifacts/
 !prompts/
 !src/lib/
-!src/generate_domains_from_csv.py
+!src/eval/generate_domains_from_csv.py
 !src/domain_generator.py
 !pyproject.toml
+!app
