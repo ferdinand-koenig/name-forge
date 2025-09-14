@@ -1,11 +1,13 @@
 ########################################
-# Builder Worker stage: installs Python deps in virtualenv
+# Builder stage: build llama-cpp-python only
 ########################################
-FROM ghcr.io/ggml-org/llama.cpp:light AS builder
+#FROM ghcr.io/ggml-org/llama.cpp:light AS builder
+FROM ghcr.io/ggml-org/llama.cpp@sha256:c19f1e324e0e16806eb6e4b9d6fd5081d48018defb8f9a8871fcc1cd867c0a5c AS builder
+
 
 ARG PYTHON_VERSION=3.10
 
-# 1. Install Python and pip
+# 1. Install Python and build tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         python${PYTHON_VERSION} \
@@ -19,110 +21,74 @@ RUN apt-get update && \
         pkg-config \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 2. Install pinned Poetry version
-RUN pip3 install poetry==2.1.2
-
-# 3. Configure Poetry environment (create in-project virtualenv) and enable OpenBLAS for llama-cpp-python
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_NO_BINARY="llama-cpp-python" \
-    POETRY_CACHE_DIR=/tmp/poetry_cache \
-    CMAKE_ARGS="-DLLAMA_CUBLAS=off -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DLLAMA_NATIVE=ON -DLLAMA_BUILD_BACKEND=ON"
-
-
+# 2. Create virtualenv
 WORKDIR /insight-bridge
+RUN python${PYTHON_VERSION} -m venv .venv
+ENV VIRTUAL_ENV=/insight-bridge/.venv \
+    PATH="/insight-bridge/.venv/bin:$PATH"
 
-# 4. Copy dependency files and dummy README for Poetry sanity
+# 3. Install llama-cpp-python from source (with OpenBLAS backend)
+ENV CMAKE_ARGS="-DLLAMA_CUBLAS=off -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DLLAMA_NATIVE=ON -DLLAMA_BUILD_BACKEND=ON"
+
+RUN pip install --no-cache-dir --force-reinstall --no-binary llama-cpp-python llama-cpp-python==0.3.14
+
+
+# 4. Export requirements.txt for runtime installation
 COPY pyproject.toml ./
-COPY README.md .
-#COPY install.py .
-
-# 5. Install dependencies (forces llama-cpp-python to build from source)
-RUN poetry install --no-root && \
-    rm -rf $POETRY_CACHE_DIR
-
-#COPY config.yaml ./
-#RUN . .venv/bin/activate && python -c "import yaml; \
-#    from langchain_huggingface import HuggingFaceEmbeddings; \
-#    model=yaml.safe_load(open('config.yaml')).get('embedding_model_name', 'sentence-transformers/sci-base'); \
-#    HuggingFaceEmbeddings(model_name=model)"
+RUN pip3 install --no-cache-dir poetry==2.1.2 && \
+    poetry self add poetry-plugin-export && \
+    poetry export -f requirements.txt --output requirements.txt --without-hashes && \
+    # Remove llama-cpp-python line from requirements.txt
+    sed -i '/llama-cpp-python/d' requirements.txt
 
 
 ########################################
-# Runtime Worker stage: minimal runtime with llama.cpp + Python
+# Runtime stage: minimal runtime + llama-cpp-python
 ########################################
-FROM ghcr.io/ggml-org/llama.cpp:light AS runtime
+#FROM ghcr.io/ggml-org/llama.cpp:light AS runtime
+FROM ghcr.io/ggml-org/llama.cpp@sha256:c19f1e324e0e16806eb6e4b9d6fd5081d48018defb8f9a8871fcc1cd867c0a5c AS runtime
 
 ARG PYTHON_VERSION=3.10
 
-# 8. Install matching Python version
+# 1. Install Python runtime and OpenBLAS runtime lib
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         python${PYTHON_VERSION} \
         python${PYTHON_VERSION}-venv \
         python${PYTHON_VERSION}-distutils \
         python3-pip \
-        libopenblas-base
+        libopenblas-base \
+        ca-certificates \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 9. Set up environment for virtualenv and add path for llama lib
+WORKDIR /insight-bridge
+
+# 2. Copy prebuilt venv with llama-cpp-python
+COPY --from=builder /insight-bridge/.venv /insight-bridge/.venv
+COPY --from=builder /insight-bridge/requirements.txt /insight-bridge/requirements.txt
+
+
 ENV VIRTUAL_ENV=/insight-bridge/.venv \
     PATH="/insight-bridge/.venv/bin:$PATH" \
     LD_LIBRARY_PATH=/insight-bridge/.venv/lib/python3.10/site-packages/llama_cpp:/app:${LD_LIBRARY_PATH:-}
 
-
-
-WORKDIR /insight-bridge
-
-# 10. Copy virtualenv from builder
-COPY --from=builder /insight-bridge/.venv /insight-bridge/.venv
-# Copy pre-downloaded Hugging Face cache
-#COPY --from=builder /root/.cache/huggingface /root/.cache/huggingface
-
-## 11. Copy project files (again — but clean, no dev tooling)
-#COPY app/__init__.py app/logger.py ./app/
-#COPY app/inference ./app/inference
-##COPY ingest ./ingest
-#COPY data/faiss_index ./data/
-#COPY data/faiss_metadata.pkl ./data/
-COPY README.md .
-#COPY config.yaml prompt_template.yaml ./
-
-# 10. Copy project files (clean set for runtime)
-COPY data/test_dataset.csv ./data/
+# 3. Copy your app code
+COPY README.md ./
 COPY prompts/prompt-1.yaml ./prompts/
-COPY src ./app/
+COPY src ./src/
+COPY ./app ./app/
 
-## Copy backend .so files into /insight-bridge
-#RUN cp /app/libllama.so /insight-bridge/ && \
-#    cp /app/libggml-*.so /insight-bridge/
-
-# Link libllama.so
+# 4. Link llama backend .so files from llama.cpp base image
 RUN ln -s /app/libllama.so /insight-bridge/libllama.so && \
     for file in /app/libggml-*.so; do \
         ln -s "$file" /insight-bridge/"$(basename "$file")"; \
     done
 
+# 5. Expose API
+EXPOSE 8000
 
+# Make the script executable
+RUN chmod +x ./app/entrypoint.sh
 
-## 12. Expose FastAPI
-#EXPOSE 8000
-
-## Remove the current entrypoint which was set to /app/llama-cli by base image
-#ENTRYPOINT []
-## 13. Default command to run worker app
-#CMD ["python3", "-m", "app.generate_domains_from_csv"]
-
-
-ENTRYPOINT ["sh", "-c", "\
-for model in artifacts/*.gguf; do \
-    model_name=$(basename \"$model\" .gguf); \
-    echo \"Running domain generation for model: $model_name\"; \
-    python3 -m app.generate_domains_from_csv \
-        --input_csv ./data/test_dataset.csv \
-        --output_csv ./outputs/${model_name}_domains.csv \
-        --model_path \"$model\" \
-        --max_length 50 \
-        --temperature 0.7; \
-done \
-"]
+ENTRYPOINT ["./app/entrypoint.sh"]
+CMD ["python", "-m", "app.server"]
