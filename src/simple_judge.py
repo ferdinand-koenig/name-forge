@@ -17,6 +17,9 @@ os.makedirs(output_folder, exist_ok=True)
 # Load embedding model (CPU-friendly)
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
+# Weights for overall score (sum should be 1)
+WEIGHTS = {"relevance": 1 / 3, "diversity": 1 / 3, "originality": 1 / 3}
+
 
 def tokenize_domain(domain):
     """Split concatenated domains into words using wordninja"""
@@ -89,6 +92,11 @@ for file_path in glob(os.path.join(input_folder, "*.csv")):
 
         # Expand: one row per domain
         for domain, rel, orig in zip(domains, relevances, originality):
+            overall_score = (
+                WEIGHTS["relevance"] * rel
+                + WEIGHTS["diversity"] * diversity
+                + WEIGHTS["originality"] * orig
+            )
             expanded_rows.append(
                 {
                     "business_description": desc,
@@ -97,6 +105,7 @@ for file_path in glob(os.path.join(input_folder, "*.csv")):
                     "relevance": float(rel),
                     "diversity": float(diversity),
                     "originality": float(orig),
+                    "overall_score": float(overall_score),
                 }
             )
 
@@ -116,6 +125,8 @@ for file_path in glob(os.path.join(input_folder, "*.csv")):
                 "median_diversity": judged_df["diversity"].median(),
                 "mean_originality": judged_df["originality"].mean(),
                 "median_originality": judged_df["originality"].median(),
+                "mean_overall_score": judged_df["overall_score"].mean(),
+                "median_overall_score": judged_df["overall_score"].median(),
             }
         )
 
