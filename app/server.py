@@ -2,6 +2,7 @@ from typing import List
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 
 from src.domain_generator import DomainGenerator
@@ -45,6 +46,18 @@ generator = DomainGenerator(llm=llm)
 app = FastAPI(title="Domain Suggestion API")
 
 
+@app.get("/")
+def redirect_to_github():
+    return RedirectResponse("https://github.com/ferdinand-koenig/name-forge")
+
+
+@app.get("/download")
+def download_artifacts():
+    return FileResponse(
+        "artifacts.zip", media_type="application/zip", filename="artifacts.zip"
+    )
+
+
 @app.post("/generate", response_model=GenerateResponse)
 def generate_domains(request: GenerateRequest):
     domains = generator.generate(request.business_description)
@@ -70,4 +83,4 @@ def generate_domains(request: GenerateRequest):
 # Optional: run standalone
 # -------------------------------
 if __name__ == "__main__":
-    uvicorn.run("app.server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.server:app", host="0.0.0.0", port=8000)
