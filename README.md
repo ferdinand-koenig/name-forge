@@ -128,6 +128,7 @@ docker run -it --rm `
 docker run -it --rm `
   -v C:/Users/koenig/PycharmProjects/NameForge/artifacts:/insight-bridge/artifacts `
   -v pip_cache:/root/.cache/pip `
+  -v C:/Users/koenig/PycharmProjects/NameForge/artifacts.zip:/insight-bridge/artifacts.zip
   -p 8000:8000 `
   server-name-forge
 ```
