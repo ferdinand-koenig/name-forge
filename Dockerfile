@@ -91,4 +91,4 @@ EXPOSE 8000
 RUN chmod +x ./app/entrypoint.sh
 
 ENTRYPOINT ["./app/entrypoint.sh"]
-CMD ["python", "-m", "app.server"]
+CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]
