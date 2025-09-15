@@ -186,6 +186,8 @@ The models are too big for Github (Size of ~4GB per quantized model). To downloa
 
 ---
 ## Development
+See also the `developer_guide.md` for tips on fine-tuning.
+
 ### The Wizard: Installing the Git Hook
 
 
@@ -219,7 +221,32 @@ pipenv run pre-commit run --all-files
 
 This ensures consistent code style and avoids commit errors.
 
-![](img\wizard.png)
+![img\wizard.png](img\wizard.png)
+
+### Tensorboard
+You can monitor the LoRA fine-tuning in real-time using TensorBoard. The Hugging Face Trainer logs metrics to `./lora-mistral-domain`.
+
+
+1. Activate your virtual environment:
+
+```bash
+source .venv/bin/activate   # Linux / Mac
+# OR
+.venv\Scripts\activate      # Windows PowerShell
+```
+
+2. Launch TensorBoard:
+
+```bash
+tensorboard --logdir ./lora-mistral-domain --port 6006
+```
+
+Open your browser and navigate to:
+
+http://localhost:6006
+
+You will see training and evaluation loss curves updating live. Press CTRL+C to stop TensorBoard.
+![img\tb-1.png](img\tb-1.png)
 
 ### Developer Guide
 Fine tuning was done on a remote machine via ssh access. Conversion to GGUF and quantization requires separate steps.
