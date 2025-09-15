@@ -24,6 +24,7 @@ llama-cpp-python = ">=0.3.4,<0.4.0"
 scikit-learn = "*"
 sentence-transformers = "*"
 wordninja = "*"
+tabulate = "*"
 
 [dev-packages]
 pre-commit = "*"
