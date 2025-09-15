@@ -221,7 +221,9 @@ pipenv run pre-commit run --all-files
 
 This ensures consistent code style and avoids commit errors.
 
-![img/wizard.png](img/wizard.png)
+[//]: # (![img/wizard.png]&#40;img/wizard.png&#41;)
+<img src="img/wizard.png" alt="img/wizard.png" width="50%">
+
 
 ### Tensorboard
 You can monitor the LoRA fine-tuning in real-time using TensorBoard. The Hugging Face Trainer logs metrics to `./lora-mistral-domain`.
