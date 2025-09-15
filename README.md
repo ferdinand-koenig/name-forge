@@ -221,7 +221,7 @@ pipenv run pre-commit run --all-files
 
 This ensures consistent code style and avoids commit errors.
 
-![img\wizard.png](img\wizard.png)
+![img/wizard.png](img/wizard.png)
 
 ### Tensorboard
 You can monitor the LoRA fine-tuning in real-time using TensorBoard. The Hugging Face Trainer logs metrics to `./lora-mistral-domain`.
@@ -246,7 +246,7 @@ Open your browser and navigate to:
 http://localhost:6006
 
 You will see training and evaluation loss curves updating live. Press CTRL+C to stop TensorBoard.
-![img\tb-1.png](img\tb-1.png)
+![img/tb-1.png](img/tb-1.png)
 
 ### Developer Guide
 Fine tuning was done on a remote machine via ssh access. Conversion to GGUF and quantization requires separate steps.
