@@ -7,102 +7,46 @@ NameForge is a project that leverages Large Language Models (LLMs) to generate c
 
 - - -
 
-## Project Structure
-```
-NameForge/
-├── data/                # Synthetic datasets
-├── notebooks/           # Jupyter notebook with all experiments
-├── src/                 # Helper scripts for dataset, model, evaluation, safety
-├── checkpoints/         # Saved model checkpoints
-├── experiments/         # Evaluation results and metrics
-├── reports/             # Technical report
-├── server/              # FastAPI server for domain name generation
-├── Pipfile              # Pipenv dependency manager
-├── Pipfile.lock
-└── README.md
-```
-- - -
-
-## Setup Instructions
-
-1.  **Clone the repo**
-    
-    ```
-    git clone <your-repo-url>
-    cd NameForge
-    ```
-    
-2.  **Install dependencies using Pipenv**
-    
-    ```
-    pip install pipenv
-    pipenv install
-    pipenv shell
-    ```
-    
-3.  **Run Jupyter Notebook**
-    
-    ```
-    jupyter notebook notebooks/NameForge.ipynb
-    ```
-    
-
-- - -
-
-## Project Workflow
-
-1.  **Synthetic Dataset Creation**
-    *   Generate diverse business descriptions and corresponding domain names.
-    *   Preprocess and save datasets in `data/`.
-2.  **Model Training**
-    *   Fine-tune a baseline open-source LLM (LoRA or full fine-tuning).
-    *   Save checkpoints in `checkpoints/`.
-3.  **Evaluation Framework**
-    *   LLM-as-a-judge scoring for relevance, creativity, and safety.
-    *   Store metrics in `experiments/`.
-4.  **Edge Case Discovery & Iterative Improvement**
-    *   Identify failure modes and retrain to improve performance.
-    *   Save improved model checkpoints and updated evaluation metrics.
-5.  **Safety Guardrails**
-    *   Ensure inappropriate or harmful content is blocked.
-6.  **FastAPI Server (Optional)**
-    *   Launch API endpoint in `server/app.py` for production-like usage.
-
-- - -
-
 ## API Example
 
-**Request:**
+### underground techno venue Berlin Mitte
+```cmd
+curl -X POST "https://llm.koenix.de/domain-generator/generate"      -H "Content-Type: application/json"      -d '{"business_description": "underground techno venue Berlin Mitte"}'
+```
+
+```json
+{"suggestions":[
+  {"domain":"undergroundtechno.com","confidence":1.0},
+  {"domain":"berlinclub.net","confidence":0.93},
+  {"domain":"techno-party.org","confidence":0.86}],
+  "status":"success","message":null}
 
 ```
-{
-  "business_description": "organic coffee shop in downtown area"
-}
+
+### Berlin-based techno music festival and event space for electronic music lovers
+```cmd
+curl -X POST "https://llm.koenix.de/domain-generator/generate"      -H "Content-Type: application/json"      -d '{"business_description": "Berlin-based techno music festival and event space for electronic music lovers"}'
 ```
+
+```json
+{"suggestions":[
+  {"domain":"berlinfestival.com","confidence":1.0},
+  {"domain":"technoevents.net","confidence":0.93},
+  {"domain":"electronicmusichub.org","confidence":0.86}],
+  "status":"success","message":null}
+
+```
+
+
+### Blocked Request Example: Sex and erotic club in Berlin
+```cmd
+curl -X POST "https://llm.koenix.de/domain-generator/generate"      -H "Content-Type: application/json"      -d '{"business_description": "Sex and erotic club in Berlin"}'
+```
+
 
 **Response:**
 
-```
-{
-  "suggestions": [
-    {"domain": "organicbeanscafe.com", "confidence": 0.92},
-    {"domain": "downtowncoffee.org", "confidence": 0.87}
-  ],
-  "status": "success"
-}
-```
-
-**Blocked Request Example:**
-
-```
-{
-  "business_description": "adult content website with explicit nude content"
-}
-```
-
-**Response:**
-
-```
+```json
 {
   "suggestions": [],
   "status": "blocked",
@@ -112,10 +56,150 @@ NameForge/
 
 - - -
 
+## Project Structure
+```
+./                              # Root folder
+    app/                        # API code and entrypoints
+    artifacts/                  # Model files, tokenizer, templates
+    data/                       # Datasets and data generation scripts
+        llm-as-a-judge-training/ # Sample datasets for LLM evaluation
+        raw/                     # Raw train/test CSV datasets
+    hooks/                      # Pre-commit hooks
+    img/                        # Images for documentation or notebooks
+    outputs/                    # Evaluation outputs
+        judged/                  # Judged results and summary CSVs
+    prompts/                    # YAML prompts for generation/evaluation
+    src/                        # Source code
+        eval/                    # Evaluation scripts & Dockerfile
+        fine_tune/               # Fine-tuning scripts and data utilities
+        lib/                     # LLM wrapper
+```
+- - -
+
+## Setup Instructions
+
+This project has multiple environments depending on the phase of the workflow. Choose the appropriate environment based on your task.  
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/ferdinand-koenig/name-forge.git  
+cd name-forge
+```
+
+### 2. Environment Setup by Task
+
+| Task | Recommended Tool | Notes |
+|------|-----------------|-------|
+| **Data Generation** | Pipenv | Used for GPU-based tasks and synthetic dataset creation. |
+| **Fine-tuning** | Pipenv | Handles GPU-heavy model fine-tuning workflows. |
+| **Evaluation / LLM-as-a-Judge** | Pipenv (scripts), Docker (test result generation) | Analysis uses Pipenv; Docker container available in `src/eval/Dockerfile` for generating outputs. |
+| **Deployment / Inference** | Docker (CPU, Poetry used internally) | Docker container available at project root `Dockerfile`. |
+
+
+### 3. Using Pipenv (GPU Tasks / Evaluation Scripts)
+
+```bash
+# Install Pipenv if not installed
+pip install pipenv
+
+# Activate environment
+pipenv shell
+
+# Install dependencies
+pipenv install
+```
+
+### 4. Using Docker
+> **For Unix users:** Replace line break ` with \
+
+- **Evaluation / Test Generation Image:** `eval-name-forge`
+
+```bash
+docker run -it --rm `
+  -v C:/Users/koenig/PycharmProjects/NameForge/artifacts:/insight-bridge/artifacts `
+  -v C:/Users/koenig/PycharmProjects/NameForge/outputs:/insight-bridge/outputs `
+  eval-name-forge
+```
+
+- **Inference / Deployment Image:** `server-name-forge`
+
+```bash
+docker run -it --rm `
+  -v C:/Users/koenig/PycharmProjects/NameForge/artifacts:/insight-bridge/artifacts `
+  -v pip_cache:/root/.cache/pip `
+  -p 8000:8000 `
+  server-name-forge
+```
+
+[//]: # (## Project Workflow)
+
+[//]: # ()
+[//]: # (1.  **Synthetic Dataset Creation**)
+
+[//]: # (    *   Generate diverse business descriptions and corresponding domain names.)
+
+[//]: # (    *   Preprocess and save datasets in `data/`.)
+
+[//]: # (2.  **Model Training**)
+
+[//]: # (    *   Fine-tune a baseline open-source LLM &#40;LoRA or full fine-tuning&#41;.)
+
+[//]: # (    *   Save checkpoints in `checkpoints/`.)
+
+[//]: # (3.  **Evaluation Framework**)
+
+[//]: # (    *   LLM-as-a-judge scoring for relevance, creativity, and safety.)
+
+[//]: # (    *   Store metrics in `experiments/`.)
+
+[//]: # (4.  **Edge Case Discovery & Iterative Improvement**)
+
+[//]: # (    *   Identify failure modes and retrain to improve performance.)
+
+[//]: # (    *   Save improved model checkpoints and updated evaluation metrics.)
+
+[//]: # (5.  **Safety Guardrails**)
+
+[//]: # (    *   Ensure inappropriate or harmful content is blocked.)
+
+[//]: # (6.  **FastAPI Server &#40;Optional&#41;**)
+
+[//]: # (    *   Launch API endpoint in `server/app.py` for production-like usage.)
+
+- - -
+
+
+
 ## Reproducibility
 
 *   All experiments are reproducible via Pipenv.
-*   Model checkpoints, datasets, and evaluation results are versioned in the repo.
+*   Datasets, and evaluation results are versioned in the repo.
+
+---
+
+## Downloading the models
+The models are too big for Github (Size of ~4GB per quantized model). To download them, visit
+[https://llm.koenix.de/domain-generator/download](https://llm.koenix.de/domain-generator/download)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ---
@@ -205,22 +289,7 @@ llama.cpp/release/build/bin/llama-cli -m ./mistral_7B_lora-q4_k_m.gguf --max-tok
 
 
 
-LLM as a judge
-1. link all the libs
-```bash
-for f in ~/NameForge/llama.cpp/release/build/bin/*.so; do
-    ln -s "$f" .
-done
-```
 
-
-
-
-Container for rouge and bleu
-```bash
-docker build -t nameforge .
-docker run -it --rm `
-  -v C:/Users/koenig/PycharmProjects/NameForge/artifacts:/name-forge/artifacts `
-  -v C:/Users/koenig/PycharmProjects/NameForge/outputs:/name-forge/outputs `
-  nameforge
-```
+Command for evaluation:
+python .\src\eval\simple_judge.py
+python .\src\eval\get_pearsons_corr.py
