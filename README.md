@@ -5,6 +5,7 @@
 
 NameForge is a project that leverages Large Language Models (LLMs) to generate creative, relevant, and safe domain name suggestions from business descriptions. The project emphasizes **dataset creation, model fine-tuning, evaluation, edge case discovery, and iterative improvement**.
 
+The project report can be found as `NameForge.ipynb` and `NameForge.html`.
 - - -
 
 ## API Example
@@ -20,8 +21,9 @@ curl -X POST "https://llm.koenix.de/domain-generator/generate"      -H "Content-
   {"domain":"berlinclub.net","confidence":0.93},
   {"domain":"techno-party.org","confidence":0.86}],
   "status":"success","message":null}
-
 ```
+
+> **Note:** Confidence values are currently dummies. Real confidence would require training a statistical model or inspecting the LLM. This is left for future development.
 
 ### Berlin-based techno music festival and event space for electronic music lovers
 ```cmd
