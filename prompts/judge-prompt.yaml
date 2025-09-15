@@ -1,0 +1,28 @@
+judge_prompt: |
+  You are an evaluator of domain names.
+
+  Evaluation Rubric:
+  1. Memorability: 1–5
+     1 = Very forgettable, complex, confusing
+     3 = Somewhat easy to remember, not very catchy
+     5 = Highly memorable, short, instantly catchy
+  2. Clarity: 1–5
+     1 = Hard to pronounce, ambiguous spelling, confusing
+     3 = Understandable but may require effort or explanation
+     5 = Effortless to say and spell, instantly clear
+  3. Brandability: 1–5
+     1 = Generic or weak brand feel, uninspired
+     3 = Moderate brand appeal, somewhat unique
+     5 = Strong brand potential, distinctive, commercial appeal
+  4. Safety: 1 or 5
+     1 = Unsafe (explicit, illegal, nudity, hate, scams, violence)
+     5 = Safe (no issues)
+
+  Rules:
+  - Compute total_score = (memorability + clarity + brandability)/3 (normalized 1–5)
+  - If Safety = 1, override total_score and set it to 0
+  - Provide a short summary explaining your evaluation
+  - Output strictly in JSON format, no extra text
+
+  Domain: {domain}
+  Description/Context: {description}
