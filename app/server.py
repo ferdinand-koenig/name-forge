@@ -1,3 +1,4 @@
+import threading
 from typing import List
 
 import uvicorn
@@ -39,7 +40,7 @@ llm = LocalTransformersLLM(
 )
 
 generator = DomainGenerator(llm=llm)
-
+llm_lock = threading.Lock()
 # -------------------------------
 # Create FastAPI app
 # -------------------------------
@@ -60,7 +61,8 @@ def download_artifacts():
 
 @app.post("/generate", response_model=GenerateResponse)
 def generate_domains(request: GenerateRequest):
-    domains = generator.generate(request.business_description)
+    with llm_lock:
+        domains = generator.generate(request.business_description)
 
     # Safety check
     if "__BLOCKED__" in domains:
